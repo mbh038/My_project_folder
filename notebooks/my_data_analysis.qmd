@@ -1,26 +1,135 @@
 ---
 title: "My project data analysis"
+author: "my name"
+date: "dd/mm/yyyy"
 format: html
 editor: visual
+execute: 
+  warning: false
+  message: false
 ---
 
-## Quarto
+This notebook can be used as the basis for your own notebooks. Here we begin with a few code chunks that you are likely to need whatever you want to do.
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+Run each code chunk in sequence by presing the green arrow at the top right of the chunk.
 
-## Running Code
+## Load packages
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
-
-You can add options to executable code like this
+These packages will cover most of your needs most of the time, but you may want to add others if the need arises.
 
 ```{r}
-#| echo: false
-2 * 2
+library(tidyverse)
+library(here)
+library(ggfortify)
+library(readxl)
+library(cowplot)
+library(janitor)
+library(vegan)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+## Load data
+
+Put your data files (.csv or Excel files) in the data subfolder.
+
+Adapt whichever of these code chunks is appropriate and delete the other one.
+
+### Load from a csv file
+
+This chunk will the data from your csv file into a data frame. here the file is called `ozone.csv`.
+
+```{r}
+filepath<-here("data","ozone.csv")
+ozone<-read_csv(filepath) |>
+  clean_names() |>
+  drop_na()
+glimpse(ozone)
+```
+
+### Load from an Excel spreadsheet.
+
+We use the function `read_excel()` to do this, from the `readxl` package. For data stored in an Excel spreadsheet we have to tell R the name of the spreadsheet *and* the name of the worksheet in which the data you want has been recorded. In this casel et us read in the data from the `penguins` worksheet of the `difference_data.xlsx` spreadsheet.
+
+```{r}
+filepath<-here("data","difference_data.xlsx")
+penguins_raw<-read_excel(path = filepath, sheet = "penguins") |>
+  clean_names() |> 
+  drop_na() # remove any lines with missing bvalues
+glimpse(penguins_raw)
+```
+
+## Clean or in someway rearrange youdata.
+
+You may or may not want to do this, but usually, you will.
+
+For example, let’s create a new data frame for just the adelie species of penguin:
+
+```{r}
+adelie <- penguins_raw |>
+  filter(species == "Adelie") |># filter picks out rows according to criteria being satisfied in some column
+  drop_na()
+glimpse(adelie)
+```
+
+There are many ways in which you may wish to select from or rearrange your data. Whatever you do, this is the point in the notebook where you most likely want to do this.
+
+## Summarise the data
+
+You typically will want to find summary statistics for each groupiong of your data. Here we find the number of penguins, the mean body mass and the standard error of that mass for each species of penguin.
+
+```{r}
+penguin_summary<-penguins_raw |>
+  group_by(species) |>
+  summarise(n = n(), mean_body_mass = mean(body_mass_g), se_body_mass = sd(body_mass_g/sqrt(n())))
+penguin_summary
+```
+
+## Plot the data
+
+The next step is usually to plot the data in some way. We would typically use the ggplot2 package from tidyverse to do this. 
+
+There are so many possibilities now, for difference data, typical plot types that you might choose are bar charts with error bars, box plots and violin plots.
+
+Here are such plots for the penguins data.
+
+### Bar plot with error bars
+We could plot a bar plot with error bars, working from the summary data frame that we created:
+
+```{r}
+penguin_summary |>
+  ggplot(aes(x = species, y = mean_body_mass)) +
+  geom_col(fill="#a6bddb") + # this is the geom that gives us a bar plot when we have already done the calculations
+  geom_errorbar(aes(ymin = mean_body_mass - se_body_mass, ymax = mean_body_mass + se_body_mass), width = 0.15) +
+  labs( x = "Species",
+        y = "Mean body mass (g) (mm)",
+        caption = "Error bars are ± one standard error of the mean") + # important to say what these error bars denote
+  theme_cowplot()
+```
+
+
+
+
+### Box plot
+```{r}
+penguins_raw |>
+  ggplot(aes(x=species, y=body_mass_g)) + # what we want to plot
+  geom_boxplot(fill="#a6bddb",notch=FALSE) + # what kind of plot we want
+  geom_jitter(width=0.1, colour = "#f03b20",alpha=0.5) +
+  labs (x = "Species",
+        y = "Body mass (g)") +
+  theme_cowplot() # choose a theme to give the plot a 'look' that we like
+```
+
+### Violin plot
+A useful alternative to the box plot, especially when the data set is large, is the violin plot:
+
+```{r}
+penguins_raw |>
+  ggplot(aes(x = species, y = body_mass_g)) + # what we want to plot
+  geom_violin(fill="#a6bddb",notch=TRUE) + # what kind of plot we want
+  #geom_jitter(width=0.1, colour = "#f03b20",alpha=0.5) +
+  labs (x = "Species",
+        y = "Body mass (g)") +
+  theme_cowplot() # choose a theme to give the plot a 'look' that we like
+```
+
+
