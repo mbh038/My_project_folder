@@ -9,7 +9,7 @@ execute:
   message: false
 ---
 
-This notebook can be used as the basis for your own notebooks. Here we begin with a few code chunks that you are likely to need whatever you want to do.
+This notebook can be used as the basis for your own notebooks. Here we begin with a few code chunks of the kind that you are likely to need whatever you want to do. You can adapt them s necessary.
 
 Run each code chunk in sequence by presing the green arrow at the top right of the chunk.
 
